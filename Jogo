@@ -1,0 +1,354 @@
+body {
+        font-family: 'Quicksand', sans-serif;
+        background: linear-gradient(135deg, #0f0524 0%, #3a1c71 100%);
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+    
+    .card {
+        perspective: 1000px;
+        transform-style: preserve-3d;
+        transition: transform 0.6s;
+        cursor: pointer;
+    }
+    
+    .card-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        transform-style: preserve-3d;
+        transition: transform 0.6s;
+    }
+    
+    .card.flipped .card-inner {
+        transform: rotateY(180deg);
+    }
+    
+    .card-front, .card-back {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    .card-front {
+        background: linear-gradient(135deg, #ff00cc 0%, #333399 100%);
+        border: 3px solid #f0f;
+        transform: rotateY(180deg);
+        padding: 10px;
+        text-align: center;
+        overflow: hidden;
+    }
+    
+    .card-back {
+        background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+        border: 3px solid #0ff;
+        background-size: cover;
+        background-position: center;
+    }
+    
+    .card-back::before {
+        content: "❤️";
+        font-size: 2rem;
+        color: white;
+        text-shadow: 0 0 10px #f0f, 0 0 20px #f0f;
+    }
+    
+    .heart {
+        position: absolute;
+        color: rgba(255, 105, 180, 0.7);
+        animation: float 3s infinite ease-in-out;
+    }
+    
+    .confetti {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        opacity: 0;
+        animation: confetti-fall 5s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-20px); }
+    }
+    
+    @keyframes confetti-fall {
+        0% { transform: translateY(-100px) rotate(0deg); opacity: 1; }
+        100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+    }
+    
+    .neon-text {
+        text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #0ff, 0 0 20px #0ff, 0 0 25px #0ff;
+        color: #fff;
+    }
+    
+    .neon-pink {
+        text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #f0f, 0 0 20px #f0f, 0 0 25px #f0f;
+        color: #fff;
+    }
+    
+    .glow-button {
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s;
+    }
+    
+    .glow-button::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        z-index: -1;
+        background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
+        background-size: 400%;
+        border-radius: 16px;
+        animation: glowing 20s linear infinite;
+    }
+    
+    @keyframes glowing {
+        0% { background-position: 0 0; }
+        50% { background-position: 400% 0; }
+        100% { background-position: 0 0; }
+    }
+    
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 100;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+    }
+    
+    .modal-content {
+        background: linear-gradient(135deg, #3a1c71 0%, #d76d77 50%, #ffaf7b 100%);
+        border: 4px solid #f0f;
+        border-radius: 20px;
+        box-shadow: 0 0 30px #f0f;
+    }
+</style>
+    <div id="game-board" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 max-w-5xl mx-auto"></div>
+</div>
+
+<!-- Modal de vitória -->
+<div id="win-modal" class="modal flex items-center justify-center">
+    <div class="modal-content p-8 max-w-md w-full text-center">
+        <h2 class="text-3xl font-bold mb-4 neon-text">Parabéns! ❤️</h2>
+        <p class="text-xl mb-6">Você encontrou todos os pares!</p>
+        <p class="mb-6">Seu amor é tão forte quanto sua memória!</p>
+        <button id="play-again" class="glow-button bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 rounded-lg font-bold text-lg hover:from-pink-600 hover:to-purple-600 transition-all">
+            Jogar Novamente
+        </button>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Mensagens românticas para os cartões
+        const messages = [
+            "Eu te amo com todas as minhas forças, amor",
+            "Só quero te dizer que você é tudo pra mim",
+            "Eu adoro cada detalhe em você",
+            "O meu amor por você não tem fim",
+            "Você é a luz do meu dia, a razão do meu mundo",
+            "Você é a razão da minha alegria",
+            "Confesso que nunca senti algo tão profundo",
+            "Talvez eu seja muito exagerada por não saber me expressar",
+            "No fundo é só medo de você não gostar",
+            "Sabe vida, te amar é tão bom",
+            "É um sentimento tão leve",
+            "Acho que tô ficando bobinha com você",
+            "Amor, fica comigo pra sempre",
+            "Eu te quero mais que nunca",
+            "Cada segundo ao seu lado tem sido único",
+            "Nem mesmo todas as estrelas do universo seriam suficientes",
+            "Para expressar o amor que sinto por você",
+            "Você é o meu mundo inteiro",
+            "Meu coração bate mais forte quando estou com você",
+            "Nosso amor é como magia"
+        ];
+        
+        // Embaralhar e selecionar 10 mensagens para o jogo
+        const shuffledMessages = [...messages].sort(() => 0.5 - Math.random()).slice(0, 10);
+        
+        // Criar pares de cartas
+        let cards = [];
+        shuffledMessages.forEach(message => {
+            cards.push({ id: Math.random(), message, matched: false });
+            cards.push({ id: Math.random(), message, matched: false });
+        });
+        
+        // Embaralhar as cartas
+        cards = cards.sort(() => 0.5 - Math.random());
+        
+        const gameBoard = document.getElementById('game-board');
+        const pairsFoundElement = document.getElementById('pairs-found');
+        const totalPairsElement = document.getElementById('total-pairs');
+        const winModal = document.getElementById('win-modal');
+        const restartBtn = document.getElementById('restart-btn');
+        const playAgainBtn = document.getElementById('play-again');
+        const musicBtn = document.getElementById('music-btn');
+        
+        let flippedCards = [];
+        let pairsFound = 0;
+        let canFlip = true;
+        let totalPairs = shuffledMessages.length;
+        
+        totalPairsElement.textContent = totalPairs;
+        
+        // Criar elementos de corações flutuantes
+        function createFloatingHearts() {
+            const container = document.body;
+            for (let i = 0; i < 20; i++) {
+                const heart = document.createElement('div');
+                heart.className = 'heart';
+                heart.innerHTML = ['❤️', '💕', '💖', '💘', '💗'][Math.floor(Math.random() * 5)];
+                heart.style.left = `${Math.random() * 100}vw`;
+                heart.style.top = `${Math.random() * 100}vh`;
+                heart.style.fontSize = `${Math.random() * 1.5 + 0.5}rem`;
+                heart.style.animationDelay = `${Math.random() * 3}s`;
+                heart.style.opacity = '0.7';
+                container.appendChild(heart);
+            }
+        }
+        
+        // Criar confetes
+        function createConfetti() {
+            const container = document.body;
+            const colors = ['#ff00cc', '#00ffcc', '#ffcc00', '#00ccff', '#cc00ff'];
+            
+            for (let i = 0; i < 100; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = `${Math.random() * 100}vw`;
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.width = `${Math.random() * 10 + 5}px`;
+                confetti.style.height = `${Math.random() * 10 + 5}px`;
+                confetti.style.animationDelay = `${Math.random() * 5}s`;
+                confetti.style.animationDuration = `${Math.random() * 3 + 2}s`;
+                container.appendChild(confetti);
+            }
+        }
+        
+        // Criar cartas no tabuleiro
+        function createCards() {
+            gameBoard.innerHTML = '';
+            cards.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card aspect-square';
+                cardElement.dataset.index = index;
+                
+                cardElement.innerHTML = `
+                    <div class="card-inner w-full h-full">
+                        <div class="card-front bg-gradient-to-br from-purple-600 to-pink-500">
+                            <p class="text-sm md:text-base">${card.message}</p>
+                        </div>
+                        <div class="card-back"></div>
+                    </div>
+                `;
+                
+                cardElement.addEventListener('click', () => flipCard(index));
+                gameBoard.appendChild(cardElement);
+            });
+        }
+        
+        // Virar carta
+        function flipCard(index) {
+            if (!canFlip) return;
+            if (flippedCards.length === 2) return;
+            if (cards[index].matched) return;
+            
+            const cardElement = document.querySelector(`[data-index="${index}"]`);
+            if (cardElement.classList.contains('flipped')) return;
+            
+            cardElement.classList.add('flipped');
+            flippedCards.push({ index, element: cardElement });
+            
+            if (flippedCards.length === 2) {
+                canFlip = false;
+                checkMatch();
+            }
+        }
+        
+        // Verificar se as cartas formam um par
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+            
+            if (cards[card1.index].message === cards[card2.index].message) {
+                // Par encontrado
+                cards[card1.index].matched = true;
+                cards[card2.index].matched = true;
+                pairsFound++;
+                pairsFoundElement.textContent = pairsFound;
+                
+                // Adicionar efeito de brilho às cartas correspondentes
+                card1.element.querySelector('.card-front').style.boxShadow = '0 0 15px #f0f, 0 0 30px #f0f';
+                card2.element.querySelector('.card-front').style.boxShadow = '0 0 15px #f0f, 0 0 30px #f0f';
+                
+                flippedCards = [];
+                canFlip = true;
+                
+                // Verificar vitória
+                if (pairsFound === totalPairs) {
+                    setTimeout(() => {
+                        winModal.style.display = 'flex';
+                        createConfetti();
+                    }, 1000);
+                }
+            } else {
+                // Não é um par
+                setTimeout(() => {
+                    card1.element.classList.remove('flipped');
+                    card2.element.classList.remove('flipped');
+                    flippedCards = [];
+                    canFlip = true;
+                }, 1000);
+            }
+        }
+        
+        // Reiniciar jogo
+        function restartGame() {
+            cards = cards.sort(() => 0.5 - Math.random());
+            cards.forEach(card => card.matched = false);
+            flippedCards = [];
+            pairsFound = 0;
+            canFlip = true;
+            pairsFoundElement.textContent = pairsFound;
+            createCards();
+            winModal.style.display = 'none';
+        }
+        
+        // Eventos
+        restartBtn.addEventListener('click', restartGame);
+        playAgainBtn.addEventListener('click', restartGame);
+        
+        // Música de fundo (simulada)
+        let musicPlaying = false;
+        musicBtn.addEventListener('click', () => {
+            musicPlaying = !musicPlaying;
+            if (musicPlaying) {
+                musicBtn.textContent = '🎵 Música: Ligada';
+                musicBtn.classList.remove('from-blue-600', 'to-cyan-600');
+                musicBtn.classList.add('from-green-600', 'to-teal-600');
+            } else {
+                musicBtn.textContent = '🎵 Música: Desligada';
+                musicBtn.classList.remove('from-green-600', 'to-teal-600');
+                musicBtn.classList.add('from-blue-600', 'to-cyan-600');
+            }
+        });
+        
+        // Inicializar jogo
+        createFloatingHearts();
+        createCards();
+    });
+</script>
